@@ -26,8 +26,13 @@ public class PersonService {
         return repository.save(person);
     }
 
-    public Person update(Person person) {
-        return repository.save(person);
+    public boolean update(Person person) {
+        Person existing = repository.findById(person.getId()).orElse(null);
+        if (existing != null && existing.equals(person)) {
+            repository.save(person);
+            return true;
+        }
+        return false;
     }
 
     public void delete(int id) {

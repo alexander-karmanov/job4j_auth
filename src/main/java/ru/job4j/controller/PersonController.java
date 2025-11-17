@@ -45,17 +45,17 @@ public class PersonController {
     @PutMapping("/")
     public ResponseEntity<Void> update(@RequestBody Person person) {
         Person existing = this.personService.findById(person.getId()).orElse(null);
-        if (existing != null && existing.equals(person)) {
+        if (this.personService.update(person)) {
             return ResponseEntity.ok().build();
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
         this.personService.delete(id);
         if (this.personService.findById(id).isPresent()) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         return ResponseEntity.ok().build();
     }
