@@ -1,6 +1,7 @@
 package ru.job4j.service;
 
 import lombok.AllArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.job4j.domain.Person;
 import ru.job4j.repository.PersonRepository;
@@ -23,14 +24,22 @@ public class PersonService {
     }
 
     public Person create(Person person) {
-        return repository.save(person);
+        try {
+            return repository.save(person);
+        } catch (DataIntegrityViolationException e) {
+            throw new RuntimeException("Пользователь с таким логином уже существует");
+        }
     }
 
     public boolean update(Person person) {
         Person existing = repository.findById(person.getId()).orElse(null);
-        if (existing != null && existing.equals(person)) {
-            repository.save(person);
-            return true;
+        if (existing != null) {
+            try {
+                repository.save(person);
+                return true;
+            } catch (DataIntegrityViolationException e) {
+                throw new RuntimeException("Не удалось обновить: нарушение целостности данных (возможно, логин уже занят): " + e.getMessage());
+            }
         }
         return false;
     }
@@ -38,5 +47,4 @@ public class PersonService {
     public void delete(int id) {
         repository.deleteById(id);
     }
-
 }

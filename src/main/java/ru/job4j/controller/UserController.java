@@ -7,11 +7,11 @@ import ru.job4j.repository.UserStore;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/users")
+/* @RestController
+@RequestMapping("/users") */
 public class UserController {
 
-    private UserStore users;
+    /* private UserStore users;
     private BCryptPasswordEncoder encoder;
 
     public UserController(UserStore users,
@@ -29,5 +29,5 @@ public class UserController {
     @GetMapping("/all")
     public List<Person> findAll() {
         return users.findAll();
-    }
+    } */
 }

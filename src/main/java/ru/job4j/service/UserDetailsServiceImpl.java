@@ -8,22 +8,22 @@ import org.springframework.stereotype.Service;
 import ru.job4j.domain.Person;
 import ru.job4j.repository.UserStore;
 
-import static java.util.Collections.emptyList;
+import java.util.Collections;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
-    private UserStore users;
+    private final UserStore userStore;
 
-    public UserDetailsServiceImpl(UserStore users) {
-        this.users = users;
+    public UserDetailsServiceImpl(UserStore userStore) {
+        this.userStore = userStore;
     }
 
     @Override
     public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
-        Person user = users.findByUsername(login);
+        Person user = userStore.findByUsername(login);
         if (user == null) {
-            throw new UsernameNotFoundException(login);
+            throw new UsernameNotFoundException("User not found: " + login);
         }
-        return new User(user.getLogin(), user.getPassword(), emptyList());
+        return new User(user.getLogin(), user.getPassword(), Collections.emptyList());
     }
 }

@@ -4,7 +4,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.domain.Person;
-import ru.job4j.repository.PersonRepository;
 import ru.job4j.service.PersonService;
 
 import java.util.List;
@@ -16,7 +15,6 @@ public class PersonController {
     private final PersonService personService;
 
     public PersonController(PersonService personService) {
-
         this.personService = personService;
     }
 
@@ -35,28 +33,43 @@ public class PersonController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
-        return new ResponseEntity<Person>(
-                this.personService.create(person),
-                HttpStatus.CREATED
-        );
+    public ResponseEntity<?> create(@RequestBody Person person) {
+        try {
+            Person created = this.personService.create(person);
+            return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body("Пользователь с таким логином уже существует");
+        }
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Person person) {
-        Person existing = this.personService.findById(person.getId()).orElse(null);
-        if (this.personService.update(person)) {
-            return ResponseEntity.ok().build();
+    public ResponseEntity<?> update(@RequestBody Person person) {
+        ResponseEntity<?> response;
+        try {
+            if (this.personService.update(person)) {
+                response = ResponseEntity.ok().build();
+            } else {
+                response = ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден");
+            }
+        } catch (RuntimeException e) {
+            response = ResponseEntity.badRequest().body("Пользователь с таким логином уже существует");
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        return response;
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
-        this.personService.delete(id);
-        if (this.personService.findById(id).isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        ResponseEntity<Void> response;
+        try {
+            if (this.personService.findById(id).isEmpty()) {
+                response = ResponseEntity.notFound().build();
+            } else {
+                this.personService.delete(id);
+                response = ResponseEntity.ok().build();
+            }
+        } catch (RuntimeException e) {
+            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-        return ResponseEntity.ok().build();
+        return response;
     }
 }
