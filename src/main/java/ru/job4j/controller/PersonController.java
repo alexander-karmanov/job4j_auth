@@ -33,43 +33,27 @@ public class PersonController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<?> create(@RequestBody Person person) {
-        try {
-            Person created = this.personService.create(person);
-            return new ResponseEntity<>(created, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("Пользователь с таким логином уже существует");
-        }
+    public ResponseEntity<Person> create(@RequestBody Person person) {
+        Person created = this.personService.create(person);
+        return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/")
     public ResponseEntity<?> update(@RequestBody Person person) {
-        ResponseEntity<?> response;
-        try {
-            if (this.personService.update(person)) {
-                response = ResponseEntity.ok().build();
-            } else {
-                response = ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден");
-            }
-        } catch (RuntimeException e) {
-            response = ResponseEntity.badRequest().body("Пользователь с таким логином уже существует");
+        if (this.personService.update(person)) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден");
         }
-        return response;
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
-        ResponseEntity<Void> response;
-        try {
-            if (this.personService.findById(id).isEmpty()) {
-                response = ResponseEntity.notFound().build();
-            } else {
-                this.personService.delete(id);
-                response = ResponseEntity.ok().build();
-            }
-        } catch (RuntimeException e) {
-            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        if (this.personService.findById(id).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        } else {
+            this.personService.delete(id);
+            return ResponseEntity.ok().build();
         }
-        return response;
     }
 }

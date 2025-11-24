@@ -27,16 +27,7 @@ public class UserStore {
 
     @Transactional
     public Person findByUsername(String login) {
-        if (login == null) {
-            return null;
-        }
-        Iterable<Person> allPersons = personRepository.findAll();
-        for (Person p : allPersons) {
-            if (login.equals(p.getLogin())) {
-                return p;
-            }
-        }
-        return null;
+        return personRepository.findByLogin(login);
     }
 
     @Transactional
