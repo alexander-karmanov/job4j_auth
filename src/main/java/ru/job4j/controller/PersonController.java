@@ -1,11 +1,20 @@
 package ru.job4j.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.domain.Person;
+import ru.job4j.exception.InvalidPersonCredentialsException;
+import ru.job4j.exception.InvalidPersonIdException;
 import ru.job4j.service.PersonService;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -14,8 +23,13 @@ public class PersonController {
 
     private final PersonService personService;
 
-    public PersonController(PersonService personService) {
+    private final ObjectMapper objectMapper;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersonController.class);
+
+    public PersonController(PersonService personService, ObjectMapper objectMapper) {
         this.personService = personService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/")
@@ -33,13 +47,31 @@ public class PersonController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
+    public ResponseEntity<?> create(@RequestBody Person person) {
+        if (person.getLogin() == null || person.getLogin().isEmpty()) {
+            throw new InvalidPersonCredentialsException("Логин не может быть пустым.");
+        }
+        if (person.getPassword() == null || person.getPassword().length() < 8) {
+            throw new InvalidPersonCredentialsException("Пароль должен содержать не менее 8 символов.");
+        }
         Person created = this.personService.create(person);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @PutMapping("/")
     public ResponseEntity<?> update(@RequestBody Person person) {
+        if (person == null) {
+            throw new InvalidPersonCredentialsException("Объект Person не может быть null.");
+        }
+        if (person.getLogin() == null || person.getLogin().isEmpty()) {
+            throw new InvalidPersonCredentialsException("Логин не может быть пустым.");
+        }
+        if (person.getPassword() == null || person.getPassword().isEmpty()) {
+            throw new InvalidPersonCredentialsException("Пароль не может быть пустым.");
+        }
+        if (person.getPassword().length() < 8) {
+            throw new InvalidPersonCredentialsException("Пароль должен содержать не менее 8 символов.");
+        }
         if (this.personService.update(person)) {
             return ResponseEntity.ok().build();
         } else {
@@ -49,11 +81,27 @@ public class PersonController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable int id) {
+        if (id <= 0) {
+            throw new InvalidPersonIdException("Некорректный ID пользователя (должен быть положительным).");
+        }
         if (this.personService.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
         } else {
             this.personService.delete(id);
             return ResponseEntity.ok().build();
         }
+    }
+
+    @ExceptionHandler(value = {InvalidPersonCredentialsException.class})
+    public void handleInvalidPersonCredentialsException(InvalidPersonCredentialsException ex, HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setStatus(HttpStatus.BAD_REQUEST.value());
+        response.setContentType("application/json");
+        response.getWriter().write(objectMapper.writeValueAsString(new HashMap<>() {
+            {
+                put("message", ex.getMessage());
+                put("type", ex.getClass().getName());
+            }
+        }));
+        LOGGER.error(ex.getLocalizedMessage());
     }
 }
