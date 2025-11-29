@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.job4j.domain.Person;
@@ -16,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/person")
@@ -73,22 +75,34 @@ public class PersonController {
             throw new InvalidPersonCredentialsException("Пароль должен содержать не менее 8 символов.");
         }
         if (this.personService.update(person)) {
-            return ResponseEntity.ok().build();
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Информация о пользователе успешно обновлена.");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Пользователь не найден");
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable int id) {
+    public ResponseEntity<?> delete(@PathVariable int id) {
         if (id <= 0) {
             throw new InvalidPersonIdException("Некорректный ID пользователя (должен быть положительным).");
         }
         if (this.personService.findById(id).isEmpty()) {
-            return ResponseEntity.notFound().build();
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Пользователь с ID " + id + " не найден.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
         } else {
             this.personService.delete(id);
-            return ResponseEntity.ok().build();
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Пользователь с ID " + id + " успешно удален.");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response);
         }
     }
 
