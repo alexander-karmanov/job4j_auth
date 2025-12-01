@@ -6,8 +6,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Person;
+import ru.job4j.dto.PersonDTO;
 import ru.job4j.exception.InvalidPersonCredentialsException;
 import ru.job4j.exception.InvalidPersonIdException;
 import ru.job4j.service.PersonService;
@@ -117,5 +120,32 @@ public class PersonController {
             }
         }));
         LOGGER.error(ex.getLocalizedMessage());
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Person> updatePassword(@RequestBody PersonDTO personDto) {
+        if (personDto.getId() == null || personDto.getPassword() == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+        if (personDto.getPassword().trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        Person person = personService.findById(personDto.getId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Пользователь не найден"));
+
+        String hashedPassword = hashPassword(personDto.getPassword());
+        person.setPassword(hashedPassword);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(personService.create(person));
+    }
+
+    private String hashPassword(String plainTextPassword) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        return passwordEncoder.encode(plainTextPassword);
     }
 }
