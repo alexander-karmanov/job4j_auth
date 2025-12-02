@@ -17,6 +17,7 @@ import ru.job4j.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +53,7 @@ public class PersonController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<?> create(@RequestBody Person person) {
+    public ResponseEntity<?> create(@Valid @RequestBody Person person) {
         if (person.getLogin() == null || person.getLogin().isEmpty()) {
             throw new InvalidPersonCredentialsException("Логин не может быть пустым.");
         }
@@ -64,7 +65,7 @@ public class PersonController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<?> update(@RequestBody Person person) {
+    public ResponseEntity<?> update(@Valid @RequestBody Person person) {
         if (person == null) {
             throw new InvalidPersonCredentialsException("Объект Person не может быть null.");
         }
@@ -123,7 +124,7 @@ public class PersonController {
     }
 
     @PatchMapping("/")
-    public ResponseEntity<Person> updatePassword(@RequestBody PersonDTO personDto) {
+    public ResponseEntity<Person> updatePassword(@Valid @RequestBody PersonDTO personDto) {
         if (personDto.getId() == null || personDto.getPassword() == null) {
             return ResponseEntity.badRequest().body(null);
         }
